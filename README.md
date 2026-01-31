@@ -1,10 +1,8 @@
-
-
-
 ## EX. NO:2 IMPLEMENTATION OF PLAYFAIR CIPHER
 
-## AIM: 
+ 
 
+## AIM:
 To write a C program to implement the Playfair Substitution technique.
 
 ## DESCRIPTION:
@@ -32,140 +30,182 @@ STEP-5: Display the obtained cipher text.
 
 
 
-Program:
-```
-PLAYFAIR CIPHER
+## Program:
+```java
+import java.util.*;
 
-#include<stdio.h>
-#include<string.h>
-#include<ctype.h>
-#define MX 5
+public class PlayfairCipher {
 
-void playfair(char ch1, char ch2, char key[MX][MX])
-{
-    int i, j, w, x, y, z;
-    FILE *out;
-    if ((out = fopen("cipher.txt", "a+")) == NULL)
-    {
-        printf("File Corrupted.");
+    private char[][] keyTable = new char[5][5];
+
+    // Convert text to lowercase and remove spaces
+    private String formatText(String text) {
+        text = text.toLowerCase().replaceAll("[^a-z]", "");
+        text = text.replace("j", "i");
+        return text;
     }
-    for (i = 0; i < MX; i++)
-    {
-        for (j = 0; j < MX; j++)
-        {
-            if (ch1 == key[i][j])
-            {
-                w = i;
-                x = j;
+
+    // Generate the 5x5 key table
+    private void generateKeyTable(String key) {
+        boolean[] used = new boolean[26];
+        key = formatText(key);
+
+        int row = 0, col = 0;
+
+        for (char c : key.toCharArray()) {
+            if (!used[c - 'a']) {
+                keyTable[row][col++] = c;
+                used[c - 'a'] = true;
+                if (col == 5) {
+                    row++;
+                    col = 0;
+                }
             }
-            else if (ch2 == key[i][j])
-            {
-                y = i;
-                z = j;
+        }
+
+        for (char c = 'a'; c <= 'z'; c++) {
+            if (c == 'j') continue;
+            if (!used[c - 'a']) {
+                keyTable[row][col++] = c;
+                used[c - 'a'] = true;
+                if (col == 5) {
+                    row++;
+                    col = 0;
+                }
             }
         }
     }
-    if (w == y)
-    {
-        x = (x + 1) % 5;
-        z = (z + 1) % 5;
-        printf("%c%c", key[w][x], key[y][z]);
-        fprintf(out, "%c%c", key[w][x], key[y][z]);
-    } 
-    else if (x == z) 
-    {
-        w = (w + 1) % 5;
-        y = (y + 1) % 5;
-        printf("%c%c", key[w][x], key[y][z]);
-        fprintf(out, "%c%c", key[w][x], key[y][z]);
-    } 
-    else 
-    {
-        printf("%c%c", key[w][z], key[y][x]);
-        fprintf(out, "%c%c", key[w][z], key[y][x]);
+
+    // Prepare plaintext into digraphs
+    private String preparePlainText(String text) {
+        text = formatText(text);
+        StringBuilder sb = new StringBuilder(text);
+
+        for (int i = 0; i < sb.length(); i += 2) {
+            if (i + 1 == sb.length() || sb.charAt(i) == sb.charAt(i + 1)) {
+                sb.insert(i + 1, 'x');
+            }
+        }
+
+        if (sb.length() % 2 != 0) {
+            sb.append('x');
+        }
+
+        return sb.toString();
     }
-    fclose(out);
+
+    // Find position of a character in key table
+    private int[] findPosition(char c) {
+        for (int i = 0; i < 5; i++) {
+            for (int j = 0; j < 5; j++) {
+                if (keyTable[i][j] == c) {
+                    return new int[]{i, j};
+                }
+            }
+        }
+        return null;
+    }
+
+    // Encrypt plaintext
+    public String encrypt(String plaintext, String key) {
+        generateKeyTable(key);
+        plaintext = preparePlainText(plaintext);
+
+        StringBuilder cipher = new StringBuilder();
+
+        for (int i = 0; i < plaintext.length(); i += 2) {
+            char a = plaintext.charAt(i);
+            char b = plaintext.charAt(i + 1);
+
+            int[] pos1 = findPosition(a);
+            int[] pos2 = findPosition(b);
+
+            if (pos1[0] == pos2[0]) {
+                cipher.append(keyTable[pos1[0]][(pos1[1] + 1) % 5]);
+                cipher.append(keyTable[pos2[0]][(pos2[1] + 1) % 5]);
+            } else if (pos1[1] == pos2[1]) {
+                cipher.append(keyTable[(pos1[0] + 1) % 5][pos1[1]]);
+                cipher.append(keyTable[(pos2[0] + 1) % 5][pos2[1]]);
+            } else {
+                cipher.append(keyTable[pos1[0]][pos2[1]]);
+                cipher.append(keyTable[pos2[0]][pos1[1]]);
+            }
+        }
+
+        return cipher.toString();
+    }
+
+    // Decrypt ciphertext
+    public String decrypt(String ciphertext, String key) {
+        generateKeyTable(key);
+        ciphertext = formatText(ciphertext);
+
+        StringBuilder plain = new StringBuilder();
+
+        for (int i = 0; i < ciphertext.length(); i += 2) {
+            char a = ciphertext.charAt(i);
+            char b = ciphertext.charAt(i + 1);
+
+            int[] pos1 = findPosition(a);
+            int[] pos2 = findPosition(b);
+
+            if (pos1[0] == pos2[0]) {
+                plain.append(keyTable[pos1[0]][(pos1[1] + 4) % 5]);
+                plain.append(keyTable[pos2[0]][(pos2[1] + 4) % 5]);
+            } else if (pos1[1] == pos2[1]) {
+                plain.append(keyTable[(pos1[0] + 4) % 5][pos1[1]]);
+                plain.append(keyTable[(pos2[0] + 4) % 5][pos2[1]]);
+            } else {
+                plain.append(keyTable[pos1[0]][pos2[1]]);
+                plain.append(keyTable[pos2[0]][pos1[1]]);
+            }
+        }
+
+        return plain.toString();
+    }
+
+    // Display key table
+    public void displayKeyTable() {
+        System.out.println("Key Table:");
+        for (char[] row : keyTable) {
+            for (char c : row) {
+                System.out.print(c + " ");
+            }
+            System.out.println();
+        }
+    }
+
+    // Main method
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        PlayfairCipher pf = new PlayfairCipher();
+
+        String key, plaintext;
+        System.out.print("Enter the Key : ");
+        key = sc.nextLine();
+        System.out.print("Enter the plaintext : ");
+        plaintext = sc.nextLine();
+
+        System.out.println("************");
+
+        System.out.println("Key Text    : " + key);
+        System.out.println("Plain Text  : " + plaintext);
+
+        String cipher = pf.encrypt(plaintext, key);
+        System.out.println("Cipher Text : " + cipher);
+
+        String decrypted = pf.decrypt(cipher, key);
+        System.out.println("Decrypted Text : " + decrypted);
+        sc.close();
+    }
 }
 
-int main() 
-{
-    int i, j, k = 0, l, m = 0, n;
-    char key[MX][MX], keyminus[25], keystr[10], str[25] = {0};
-    char alpa[26] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'};
-    printf("\nEnter key: ");
-    fgets(keystr, sizeof(keystr), stdin);
-    keystr[strcspn(keystr, "\n")] = 0; // Remove newline character
-
-    printf("\nEnter the plain text: ");
-    fgets(str, sizeof(str), stdin);
-    str[strcspn(str, "\n")] = 0; // Remove newline character
-    n = strlen(keystr);
-    for (i = 0; i < n; i++) 
-    {
-        if (keystr[i] == 'j') keystr[i] = 'i';
-        else if (keystr[i] == 'J') keystr[i] = 'I';
-        keystr[i] = toupper(keystr[i]);
-    }
-    for (i = 0; i < strlen(str); i++) {
-        if (str[i] == 'j') str[i] = 'i';
-        else if (str[i] == 'J') str[i] = 'I';
-        str[i] = toupper(str[i]);
-    }
-    j = 0;
-    for (i = 0; i < 26; i++)
-    {
-        for (k = 0; k < n; k++)
-        {
-            if (keystr[k] == alpa[i]) break;
-            else if (alpa[i] == 'J') break;
-        }
-        if (k == n)
-        {
-            keyminus[j] = alpa[i];
-            j++;
-        }
-    }
-    k = 0;
-    for (i = 0; i < MX; i++) 
-    {
-        for (j = 0; j < MX; j++)
-        {
-            if (k < n)
-            {
-                key[i][j] = keystr[k];
-                k++;
-            } 
-            else
-            {
-                key[i][j] = keyminus[m];
-                m++;
-            }
-            printf("%c ", key[i][j]);
-        }
-        printf("\n");
-    }
-    printf("\n\nEntered text :%s\nCipher Text :",str);
-    for (i = 0; i < strlen(str); i++) 
-    {
-        if (str[i] == 'J') str[i] = 'I';
-        if (str[i + 1] == '\0') playfair(str[i], 'X', key);
-        else
-        {
-            if (str[i + 1] == 'J') str[i + 1] = 'I';
-            if (str[i] == str[i + 1]) playfair(str[i], 'X', key);
-            else 
-            {
-                playfair(str[i], str[i + 1], key);
-                i++;
-            }
-        }
-  
-    }
-     printf("\nDecrypted text:%s",str);
-    return 0;
-}
 ```
 
-Output:
-<img width="1864" height="925" alt="image" src="https://github.com/user-attachments/assets/fc67266e-1462-47eb-91d9-3b982d36f30a" />
 
+
+## Output:
+<img width="1624" height="894" alt="image" src="https://github.com/user-attachments/assets/b08440ae-cfa6-451d-9f34-9d768053cd69" />
+
+## RESULT :
+ Thus the implementation of ceasar cipher had been executed successfully.
