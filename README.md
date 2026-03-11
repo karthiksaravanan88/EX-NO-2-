@@ -205,7 +205,8 @@ public class PlayfairCipher {
 
 
 ## Output:
-<img width="1624" height="894" alt="image" src="https://github.com/user-attachments/assets/b08440ae-cfa6-451d-9f34-9d768053cd69" />
+<img width="777" height="744" alt="image" src="https://github.com/user-attachments/assets/875cc6bb-8140-480b-afaf-05c5d4c5582c" />
+
 
 ## RESULT :
  Thus the implementation of ceasar cipher had been executed successfully.
